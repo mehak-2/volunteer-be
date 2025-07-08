@@ -1,6 +1,5 @@
 import express from 'express';
 import {
-  createVolunteer,
   getVolunteerProfile,
   updateProfile,
   toggleEmergencyStatus,
@@ -8,18 +7,16 @@ import {
   respondToAlert
 } from '../controllers/volunteer.controller.js';
 import { adminAuthMiddleware } from '../middlewares/adminAuth.middleware.js';
-import { Volunteer } from '../models/volunteer.model.js';
+import User from '../models/user.model.js';
 
 const router = express.Router();
 
-router.post('/create', createVolunteer);
 router.get('/profile/:userId', getVolunteerProfile);
 router.put('/profile/:userId', updateProfile);
 router.put('/emergency-status/:userId', toggleEmergencyStatus);
 router.post('/alerts', createNewAlert);
 router.put('/alerts/:alertId/respond', respondToAlert);
 
-// Add this new route for bulk approval
 router.post('/volunteers/bulk-approve', adminAuthMiddleware, async (req, res) => {
   try {
     const { volunteerIds } = req.body;
@@ -31,8 +28,8 @@ router.post('/volunteers/bulk-approve', adminAuthMiddleware, async (req, res) =>
       });
     }
 
-    await Volunteer.updateMany(
-      { _id: { $in: volunteerIds } },
+    await User.updateMany(
+      { _id: { $in: volunteerIds }, role: 'volunteer' },
       { $set: { status: 'approved' } }
     );
 

@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import Organization from '../models/organization.model.js';
 import Program from '../models/program.model.js';
-import { Volunteer } from '../models/volunteer.model.js';
+import User from '../models/user.model.js';
 
 export const organizationRegister = async (req, res) => {
   try {
@@ -127,8 +127,8 @@ export const getOrganizationDashboard = async (req, res) => {
     }
 
     const programs = await Program.find({ organization: organizationId })
-      .populate('appliedVolunteers.volunteer', 'personalInfo contactInfo skills status')
-      .populate('selectedVolunteers', 'personalInfo contactInfo skills');
+      .populate('appliedVolunteers.volunteer', 'name personalInfo contactInfo skills status')
+      .populate('selectedVolunteers', 'name personalInfo contactInfo skills');
 
     const stats = {
       totalPrograms: programs.length,
@@ -194,8 +194,8 @@ export const getPrograms = async (req, res) => {
     if (category) filter.category = category;
 
     const programs = await Program.find(filter)
-      .populate('appliedVolunteers.volunteer', 'personalInfo contactInfo skills status')
-      .populate('selectedVolunteers', 'personalInfo contactInfo skills')
+      .populate('appliedVolunteers.volunteer', 'name personalInfo contactInfo skills status')
+      .populate('selectedVolunteers', 'name personalInfo contactInfo skills')
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -218,7 +218,7 @@ export const getVolunteersForProgram = async (req, res) => {
     const program = await Program.findOne({ 
       _id: programId, 
       organization: organizationId 
-    }).populate('appliedVolunteers.volunteer', 'personalInfo contactInfo skills status emergency');
+    }).populate('appliedVolunteers.volunteer', 'name personalInfo contactInfo skills status emergency');
 
     if (!program) {
       return res.status(404).json({
@@ -321,7 +321,7 @@ export const updateProgram = async (req, res) => {
       message: 'Program updated successfully'
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(400).json({
       success: false,
       message: error.message
     });
@@ -333,9 +333,9 @@ export const deleteProgram = async (req, res) => {
     const { programId } = req.params;
     const organizationId = req.organization.id;
 
-    const program = await Program.findOneAndDelete({ 
-      _id: programId, 
-      organization: organizationId 
+    const program = await Program.findOneAndDelete({
+      _id: programId,
+      organization: organizationId
     });
 
     if (!program) {

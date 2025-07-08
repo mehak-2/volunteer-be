@@ -1,18 +1,20 @@
 import express from 'express';
 import { adminAuthMiddleware } from '../middlewares/adminAuth.middleware.js';
-import { Volunteer } from '../models/volunteer.model.js';
+import User from '../models/user.model.js';
 
 const router = express.Router();
 
 router.post('/reports/generate', adminAuthMiddleware, async (req, res) => {
   try {
-    // Get basic stats
     const stats = {
-      total: await Volunteer.countDocuments(),
-      approved: await Volunteer.countDocuments({ status: 'approved' }),
-      pending: await Volunteer.countDocuments({ status: 'pending' }),
-      rejected: await Volunteer.countDocuments({ status: 'rejected' }),
-      activeEmergency: await Volunteer.countDocuments({ 'emergency.isAvailable': true })
+      total: await User.countDocuments({ role: 'volunteer' }),
+      approved: await User.countDocuments({ role: 'volunteer', status: 'approved' }),
+      pending: await User.countDocuments({ role: 'volunteer', status: 'pending' }),
+      rejected: await User.countDocuments({ role: 'volunteer', status: 'rejected' }),
+      activeEmergency: await User.countDocuments({ 
+        role: 'volunteer', 
+        'emergency.isAvailable': true 
+      })
     };
 
     res.json({
@@ -20,7 +22,7 @@ router.post('/reports/generate', adminAuthMiddleware, async (req, res) => {
       data: {
         generatedAt: new Date(),
         stats,
-        reportUrl: '/reports/latest' // Placeholder URL
+        reportUrl: '/reports/latest'
       }
     });
   } catch (error) {

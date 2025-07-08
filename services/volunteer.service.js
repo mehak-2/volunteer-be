@@ -37,11 +37,7 @@ export const getVolunteerDashboard = async (userId) => {
       throw new Error('User not found');
     }
 
-    console.log('Dashboard check for user:', {
-      userId: user._id,
-      onboardingComplete: user.onboardingComplete,
-      profileCompletion: user.profileCompletion
-    });
+
 
     if (!user.onboardingComplete) {
       return {

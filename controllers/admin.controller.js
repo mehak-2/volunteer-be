@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import Admin from '../models/admin.model.js';
-import {Volunteer} from '../models/volunteer.model.js';
+import User from '../models/user.model.js';
 import {Alert} from '../models/alert.model.js';
 import Activity from '../models/activity.model.js';
 import Organization from '../models/organization.model.js';
@@ -9,11 +9,11 @@ import Organization from '../models/organization.model.js';
 export const adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log('Login attempt for:', email); // Debug log
+    console.log('Login attempt for:', email);
 
     const admin = await Admin.findOne({ email });
     if (!admin) {
-      console.log('Admin not found'); // Debug log
+      console.log('Admin not found');
       return res.status(401).json({
         success: false,
         message: "Invalid credentials"
@@ -22,7 +22,7 @@ export const adminLogin = async (req, res) => {
 
     const isMatch = await bcrypt.compare(password, admin.password);
     if (!isMatch) {
-      console.log('Password mismatch'); // Debug log
+      console.log('Password mismatch');
       return res.status(401).json({
         success: false,
         message: "Invalid credentials"
@@ -48,7 +48,7 @@ export const adminLogin = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Login error:', error); // Debug log
+    console.error('Login error:', error);
     res.status(500).json({
       success: false,
       message: error.message
@@ -63,7 +63,7 @@ export const adminLogout = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 0 // Expire immediately
+      maxAge: 0
     });
 
     res.status(200).json({
@@ -81,7 +81,7 @@ export const adminLogout = async (req, res) => {
 export const createAdmin = async (req, res) => {
   try {
     const { email, password, name } = req.body;
-    console.log('Creating admin:', email); // Debug log
+    console.log('Creating admin:', email);
 
     const existingAdmin = await Admin.findOne({ email });
     if (existingAdmin) {
@@ -100,7 +100,7 @@ export const createAdmin = async (req, res) => {
       role: 'admin'
     });
 
-    console.log('Admin created successfully:', admin.email); // Debug log
+    console.log('Admin created successfully:', admin.email);
 
     res.status(201).json({
       success: true,
@@ -114,7 +114,7 @@ export const createAdmin = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Admin creation error:', error); // Debug log
+    console.error('Admin creation error:', error);
     res.status(500).json({
       success: false,
       message: error.message
@@ -126,15 +126,16 @@ export const createAdmin = async (req, res) => {
 export const getDashboardStats = async (req, res) => {
   try {
     const stats = {
-      total: await Volunteer.countDocuments(),
-      pending: await Volunteer.countDocuments({ status: 'pending' }),
-      approved: await Volunteer.countDocuments({ status: 'approved' }),
-      active: await Volunteer.countDocuments({ 
+      total: await User.countDocuments({ role: 'volunteer' }),
+      pending: await User.countDocuments({ role: 'volunteer', status: 'pending' }),
+      approved: await User.countDocuments({ role: 'volunteer', status: 'approved' }),
+      active: await User.countDocuments({ 
+        role: 'volunteer',
         status: 'approved', 
-        emergencyAvailable: true 
+        'emergency.isAvailable': true 
       }),
-      responseTime: "4.2 min", // You can calculate this based on your alert response data
-      todayResponses: 23 // Calculate from your alerts/responses collection
+      responseTime: "4.2 min",
+      todayResponses: 23
     };
 
     res.status(200).json({
@@ -153,7 +154,7 @@ export const getDashboardStats = async (req, res) => {
 export const getVolunteers = async (req, res) => {
   try {
     const { status, search } = req.query;
-    let query = {};
+    let query = { role: 'volunteer' };
 
     if (status && status !== 'all') {
       query.status = status;
@@ -162,12 +163,13 @@ export const getVolunteers = async (req, res) => {
     if (search) {
       query.$or = [
         { 'personalInfo.fullname': { $regex: search, $options: 'i' } },
-        { 'contactInfo.email': { $regex: search, $options: 'i' } }
+        { 'email': { $regex: search, $options: 'i' } },
+        { 'name': { $regex: search, $options: 'i' } }
       ];
     }
 
-    const volunteers = await Volunteer.find(query)
-      .select('personalInfo contactInfo skills status emergencyAvailable joinDate lastActive responseCount')
+    const volunteers = await User.find(query)
+      .select('name email personalInfo contactInfo skills status emergency profileCompletion onboardingComplete createdAt')
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -187,20 +189,21 @@ export const updateVolunteerStatus = async (req, res) => {
   try {
     const { volunteerId, status } = req.body;
 
-    const volunteer = await Volunteer.findByIdAndUpdate(
+    const volunteer = await User.findByIdAndUpdate(
       volunteerId,
       { 
         status,
-        lastUpdated: new Date(),
-        $push: {
-          statusHistory: {
-            status,
-            updatedAt: new Date()
-          }
-        }
+        lastUpdated: new Date()
       },
       { new: true }
     );
+
+    if (!volunteer) {
+      return res.status(404).json({
+        success: false,
+        message: "Volunteer not found"
+      });
+    }
 
     // Create activity log
     await Activity.create({
@@ -225,7 +228,7 @@ export const updateVolunteerStatus = async (req, res) => {
 export const getRecentActivity = async (req, res) => {
   try {
     const activities = await Activity.find()
-      .populate('volunteer', 'personalInfo.fullname')
+      .populate('volunteer', 'name personalInfo.fullname')
       .sort({ createdAt: -1 })
       .limit(10);
 

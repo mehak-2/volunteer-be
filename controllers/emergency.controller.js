@@ -1,13 +1,15 @@
-import { Volunteer } from '../models/volunteer.model.js';
+import User from '../models/user.model.js';
 import { Alert } from '../models/alert.model.js';
 
 export const getActiveVolunteers = async (req, res) => {
   try {
-    const volunteers = await Volunteer.find({
+    const volunteers = await User.find({
+      role: 'volunteer',
       'emergency.isAvailable': true,
       'contactInfo.location': { $exists: true },
       status: 'approved'
     }).select({
+      'name': 1,
       'personalInfo.fullname': 1,
       'contactInfo.location': 1,
       'emergency.lastActive': 1,

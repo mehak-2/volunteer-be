@@ -47,6 +47,7 @@ export const submitCompleteApplication = async (applicationData) => {
         backgroundCheckConsent: documentsInfo.backgroundCheckConsent || false
       };
       user.status = 'pending';
+      user.onboardingComplete = true;
       
       user.calculateProfileCompletion();
       await user.save();
@@ -81,7 +82,8 @@ export const submitCompleteApplication = async (applicationData) => {
           termsAccepted: documentsInfo.termsAndConditions || false,
           backgroundCheckConsent: documentsInfo.backgroundCheckConsent || false
         },
-        status: 'pending'
+        status: 'pending',
+        onboardingComplete: true
       });
       
       user.calculateProfileCompletion();

@@ -56,7 +56,6 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Find user
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({
@@ -65,7 +64,6 @@ export const login = async (req, res) => {
       });
     }
 
-    // Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({
@@ -74,12 +72,23 @@ export const login = async (req, res) => {
       });
     }
 
-    // Generate token
     const token = jwt.sign(
       { id: user._id },
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '24h' }
     );
+
+    let redirect = '/onboarding';
+    
+    if (user.onboardingComplete) {
+      if (user.status === 'approved') {
+        redirect = '/volunteerdashboard';
+      } else if (user.status === 'pending') {
+        redirect = '/volunteer/approval-pending';
+      } else if (user.status === 'rejected') {
+        redirect = '/volunteer/application-rejected';
+      }
+    }
 
     res.status(200).json({
       success: true,
@@ -88,9 +97,10 @@ export const login = async (req, res) => {
           id: user._id,
           email: user.email,
           name: user.name,
-          onboardingComplete: user.onboardingComplete
+          onboardingComplete: user.onboardingComplete,
+          status: user.status
         },
-        redirect: user.onboardingComplete ? '/volunteerdashboard' : '/onboarding',
+        redirect: redirect,
         token
       }
     });
