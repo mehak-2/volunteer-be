@@ -1,0 +1,71 @@
+import express from 'express';
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+import cors from 'cors';
+import userRoutes from './routes/user.routes.js';
+import onboardingRoutes from './routes/onboarding.routes.js';
+import contactstepRoutes from './routes/contactstep.routes.js';
+import skillsStepRoutes from './routes/skillsstep.routes.js';
+import documentstepRoutes from './routes/documentstep.routes.js';
+import volunteerRoutes from './routes/volunteer.routes.js';
+import authRoutes from './routes/auth.routes.js';
+import uploadRoutes from './routes/upload.routes.js';
+import adminRoutes from './routes/admin.routes.js';
+import organizationRoutes from './routes/organization.routes.js';
+import cookieParser from 'cookie-parser';
+import alertRoutes from './routes/alert.routes.js';
+import reportRoutes from './routes/reports.routes.js';
+import emergencyRoutes from './routes/emergency.routes.js';
+import { useEffect, useState } from 'react';
+
+
+dotenv.config();
+const app = express();
+
+// Increase JSON payload limit BEFORE other middleware
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Add cookie parser middleware before routes
+app.use(cookieParser());
+
+// Update CORS configuration to allow credentials
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://localhost:3001'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
+  exposedHeaders: ['Authorization'],
+  credentials: true,
+  maxAge: 86400 // 24 hours
+}));
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/onboarding', onboardingRoutes);
+app.use('/api/contactstep', contactstepRoutes);
+app.use('/api/skillsstep', skillsStepRoutes);
+app.use('/api/documentstep', documentstepRoutes);
+app.use('/api/volunteer', volunteerRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/admin', alertRoutes);
+app.use('/api/admin', volunteerRoutes);
+app.use('/api/admin', reportRoutes);
+app.use('/api/emergency', emergencyRoutes);
+app.use('/api/organization', organizationRoutes);
+
+
+// MongoDB Connection
+mongoose.connect('mongodb://localhost:27017/volunteer-management')
+  .then(() => console.log('Connected to MongoDB'))
+  .catch(err => console.error('MongoDB connection error:', err));
+
+// Serve uploaded files statically
+app.use('/uploads', express.static('uploads'));
+
+// Add upload routes
+app.use('/api/upload', uploadRoutes);
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
