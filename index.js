@@ -20,9 +20,8 @@ import emergencyRoutes from './routes/emergency.routes.js';
 dotenv.config();
 const app = express();
 
-// Place this BEFORE other middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001'],
+  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000', 'http://localhost:3001'],
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: [
     'Content-Type', 
