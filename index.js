@@ -21,22 +21,30 @@ import emergencyRoutes from './routes/emergency.routes.js';
 dotenv.config();
 const app = express();
 
-// Increase JSON payload limit BEFORE other middleware
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
-
-// Add cookie parser middleware before routes
-app.use(cookieParser());
-
-// Update CORS configuration to allow credentials
+// Place this BEFORE other middleware
 app.use(cors({
   origin: ['http://localhost:3000', 'http://localhost:3001'],
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'Origin', 
+    'Accept', 
+    'sec-ch-ua',
+    'sec-ch-ua-mobile',
+    'sec-ch-ua-platform',
+    'user-agent',
+    'referer'
+  ],
   exposedHeaders: ['Authorization'],
   credentials: true,
   maxAge: 86400 // 24 hours
 }));
+
+// Then place these after CORS middleware
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(cookieParser());
 
 // Routes
 app.use('/api/auth', authRoutes);
