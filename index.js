@@ -54,9 +54,19 @@ app.use('/api/organization', organizationRoutes);
 
 
 // MongoDB Connection
-mongoose.connect('mongodb://localhost:27017/volunteer-management')
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err));
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/volunteer-management';
+
+mongoose.connect(MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+  socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
+})
+.then(() => console.log('Connected to MongoDB'))
+.catch(err => {
+  console.error('MongoDB connection error:', err);
+  process.exit(1); // Exit with failure if we can't connect to database
+});
 
 // Serve uploaded files statically
 app.use('/uploads', express.static('uploads'));
