@@ -17,7 +17,6 @@ import alertRoutes from './routes/alert.routes.js';
 import reportRoutes from './routes/reports.routes.js';
 import emergencyRoutes from './routes/emergency.routes.js';
 
-
 dotenv.config();
 const app = express();
 
@@ -60,20 +59,20 @@ app.use('/api/admin', reportRoutes);
 app.use('/api/emergency', emergencyRoutes);
 app.use('/api/organization', organizationRoutes);
 
-
-// MongoDB Connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/volunteer-management';
-
-mongoose.connect(MONGODB_URI, {
+// MongoDB Connection with improved options
+mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/volunteer-management', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
-  socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
+  serverSelectionTimeoutMS: 15000, // Timeout after 15 seconds instead of 10
+  socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
+  connectTimeoutMS: 15000, // Give up initial connection after 15 seconds
+  maxPoolSize: 50, // Maintain up to 50 socket connections
+  retryWrites: true,
 })
 .then(() => console.log('Connected to MongoDB'))
 .catch(err => {
   console.error('MongoDB connection error:', err);
-  process.exit(1); // Exit with failure if we can't connect to database
+  process.exit(1);
 });
 
 // Serve uploaded files statically
