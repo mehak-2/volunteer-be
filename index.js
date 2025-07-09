@@ -16,7 +16,6 @@ import cookieParser from 'cookie-parser';
 import alertRoutes from './routes/alert.routes.js';
 import reportRoutes from './routes/reports.routes.js';
 import emergencyRoutes from './routes/emergency.routes.js';
-import { useEffect, useState } from 'react';
 
 
 dotenv.config();
